@@ -212,8 +212,54 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        return max(
+            game.get_legal_moves(),
+            key = lambda move: self.min_value(game.forecast_move(move), depth - 1)
+        )
+
+    def min_value(self, game, depth):
+        """
+        checks all posibble moves and returns the minimum value after passing
+        through a max node. If terminal state is reached, returns -Inf. If maximum
+        depth is reached, returns score
+        """
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        # check for terminal state
+        utility = game.utility(self)
+        if(utility != 0):
+            return utility
+
+        if(depth == 0):
+            return self.score(game, self)
+
+        return min(map(
+            lambda move: self.max_value(game.forecast_move(move), depth - 1),
+            game.get_legal_moves()
+        ))
+
+    def max_value(self, game, depth):
+        """
+        checks all posibble moves and returns the maximum value after passing
+        through a min node. If terminal state is reached, returns Inf. If minimum
+        depth is reached, returns score
+        """
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        # check for terminal state
+        utility = game.utility(self)
+        if(utility != 0):
+            return utility
+
+        if(depth == 0):
+            return self.score(game, self)
+
+        return max(map(
+            lambda move: self.min_value(game.forecast_move(move), depth - 1),
+            game.get_legal_moves()
+        ))
 
 
 class AlphaBetaPlayer(IsolationPlayer):
