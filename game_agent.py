@@ -300,8 +300,20 @@ class AlphaBetaPlayer(IsolationPlayer):
         """
         self.time_left = time_left
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        # Initialize the best move so that this function returns something
+        # in case the search fails due to timeout
+        best_move = (-1, -1)
+
+        try:
+            # The try/except block will automatically catch the exception
+            # raised when the timer is about to expire.
+            return self.alphabeta(game, self.search_depth)
+
+        except SearchTimeout:
+            pass  # Handle any actions required after timeout as needed
+
+        # Return the best move from the last completed search iteration
+        return best_move
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf")):
         """Implement depth-limited minimax search with alpha-beta pruning as
@@ -351,5 +363,63 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        value = self.max_value(game, depth, alpha, beta)[1]
+        return value
+
+    def max_value(self, game, depth, alpha, beta):
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        # check for terminal state
+        utility = game.utility(self)
+        if(utility != 0):
+            return utility, None
+
+        if(depth == 0):
+            return self.score(game, self), None
+
+        max_move = (-1, -1)
+        max_value = beta
+
+        for move in game.get_legal_moves():
+            new_game = game.forecast_move(move)
+            value = self.min_value(new_game, depth - 1, alpha, beta)[0]
+
+            # if v is greater than the value in the previous minimizor, there's
+            # no point searching further
+            if(value > beta):
+                return value, None
+
+            if(value > max_value):
+                max_move = move
+
+        return max_value, max_move
+
+    def min_value(self, game, depth, alpha, beta):
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        # check for terminal state
+        utility = game.utility(self)
+        if(utility != 0):
+            return utility, None
+
+        if(depth == 0):
+            return self.score(game, self), None
+
+        min_move = (-1, -1)
+        min_value = beta
+
+        for move in game.get_legal_moves():
+            new_game = game.forecast_move(move)
+            value = self.max_value(new_game, depth - 1, alpha, beta)[0]
+
+            # if v is lower than the value in the previous maximizor, there's
+            # no point searching further
+            if(value > beta):
+                return value, None
+
+            if(value < min_value):
+                min_move = move
+
+        return min_value, min_move
