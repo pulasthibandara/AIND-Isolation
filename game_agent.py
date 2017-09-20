@@ -3,6 +3,7 @@ test your agent's strength against a set of known agents using tournament.py
 and include the results in your report.
 """
 import random
+import itertools
 
 
 class SearchTimeout(Exception):
@@ -307,7 +308,8 @@ class AlphaBetaPlayer(IsolationPlayer):
         try:
             # The try/except block will automatically catch the exception
             # raised when the timer is about to expire.
-            return self.alphabeta(game, self.search_depth)
+            for depth in itertools.count():
+                best_move = self.alphabeta(game, depth)
 
         except SearchTimeout:
             pass  # Handle any actions required after timeout as needed
@@ -379,7 +381,7 @@ class AlphaBetaPlayer(IsolationPlayer):
             return self.score(game, self), None
 
         max_move = (-1, -1)
-        max_value = beta
+        max_value = float("-inf")
 
         for move in game.get_legal_moves():
             new_game = game.forecast_move(move)
@@ -387,10 +389,12 @@ class AlphaBetaPlayer(IsolationPlayer):
 
             # if v is greater than the value in the previous minimizor, there's
             # no point searching further
-            if(value > beta):
-                return value, None
+            if(value >= beta):
+                return value, move
 
+            alpha = max(alpha, value)
             if(value > max_value):
+                max_value = value
                 max_move = move
 
         return max_value, max_move
@@ -408,7 +412,7 @@ class AlphaBetaPlayer(IsolationPlayer):
             return self.score(game, self), None
 
         min_move = (-1, -1)
-        min_value = beta
+        min_value = float("inf")
 
         for move in game.get_legal_moves():
             new_game = game.forecast_move(move)
@@ -416,10 +420,12 @@ class AlphaBetaPlayer(IsolationPlayer):
 
             # if v is lower than the value in the previous maximizor, there's
             # no point searching further
-            if(value > beta):
-                return value, None
+            if(value <= alpha):
+                return value, move
 
+            beta = min(beta, value)
             if(value < min_value):
+                min_value = value
                 min_move = move
 
         return min_value, min_move
