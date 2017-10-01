@@ -3,6 +3,7 @@ test your agent's strength against a set of known agents using tournament.py
 and include the results in your report.
 """
 import random
+import math
 import itertools
 
 
@@ -35,8 +36,23 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    if len(game.get_legal_moves(game.inactive_player)) == 0:
+        return float("inf")
+
+    all_positions = game.width * game.height
+    remaining_positions = len(game.get_blank_spaces())
+    filled_positions = all_positions - remaining_positions
+
+    # return center score if its the first moves in the game
+    if filled_positions < 2:
+        w, h = game.width / 2., game.height / 2.
+        y, x = game.get_player_location(player)
+        return float((h - y)**2 + (w - x)**2)
+
+    # start defensive and be more aggrasive by blocking aponant moves later
+    # in the game
+    return len(game.get_legal_moves(player)) / filled_positions  - \
+        len(game.get_legal_moves(game.inactive_player)) / remaining_positions
 
 
 def custom_score_2(game, player):
@@ -61,8 +77,11 @@ def custom_score_2(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    if len(game.get_legal_moves(game.inactive_player)) == 0:
+        return float("inf")
+
+    # block other player moves throughout the game
+    return float(- len(game.get_legal_moves(game.inactive_player)))
 
 
 def custom_score_3(game, player):
@@ -87,8 +106,24 @@ def custom_score_3(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    all_positions = game.width * game.height
+    remaining_positions = len(game.get_blank_spaces())
+    filled_positions = all_positions - remaining_positions
+
+    # return center score for first moves
+    if filled_positions < 2:
+        w, h = game.width / 2., game.height / 2.
+        y, x = game.get_player_location(player)
+        return float((h - y)**2 + (w - x)**2)
+    
+    # them score to maximize player moves
+    return float(len(game.get_legal_moves(player)))
 
 
 class IsolationPlayer:
@@ -213,10 +248,13 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
+        legal_moves = game.get_legal_moves()
+
+        # take maximum move for all immediate minimizor scores
         return max(
-            game.get_legal_moves(),
-            key = lambda move: self.min_value(game.forecast_move(move), depth - 1)
-        )
+            legal_moves,
+            key=lambda move: self.min_value(game.forecast_move(move), depth - 1)
+        ) if legal_moves else  (-1, -1)
 
     def min_value(self, game, depth):
         """
@@ -235,6 +273,7 @@ class MinimaxPlayer(IsolationPlayer):
         if(depth == 0):
             return self.score(game, self)
 
+        # return minimum score for all immediate maximizor scores
         return min(map(
             lambda move: self.max_value(game.forecast_move(move), depth - 1),
             game.get_legal_moves()
@@ -257,6 +296,7 @@ class MinimaxPlayer(IsolationPlayer):
         if(depth == 0):
             return self.score(game, self)
 
+        # return maximum score for all immediate minimizor scores
         return max(map(
             lambda move: self.min_value(game.forecast_move(move), depth - 1),
             game.get_legal_moves()
